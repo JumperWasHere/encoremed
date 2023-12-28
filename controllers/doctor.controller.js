@@ -216,7 +216,7 @@ async function validateGenerateTimeslot(data) {
         value: Joi.number().integer(),
     });
     try {
-        value = await schema.validateAsync({
+        let value = await schema.validateAsync({
             doctorId: data.doctorId,
             type: data.type,
             startDate: data.startDate,
