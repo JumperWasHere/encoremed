@@ -94,6 +94,21 @@ async function getMinutePerSlotByDoctor(doctorId){
     })
     return totalMinute;
 }
+async function updateTimeSlotDr(data) {
+    let updateStatus = true;
+    let query = `UPDATE Doctor SET minutePerSlot= @minutePerSlot where  userId = @userId`
+    let inputParams = {
+        minutePerSlot: data.minutePerSlot,
+        userId: data.userId
+    }
+    await db.executeSql2(query, inputParams, async (result, err) => {
+        if (err) {
+        console.log(err)
+        updateStatus = false
+    };
 
+    })
+    return updateStatus;
+}
 
-module.exports = { saveEvent, generateTimeSlot, getDoctorTImeSlot, getMinutePerSlotByDoctor }
+module.exports = { saveEvent, generateTimeSlot, getDoctorTImeSlot, getMinutePerSlotByDoctor, updateTimeSlotDr }

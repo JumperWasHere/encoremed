@@ -23,7 +23,7 @@ exports.generateTimeSlotByEvent = async (req, res) => {
             
     const minutePerSlot = await doctorService.getMinutePerSlotByDoctor(isValidate.value.doctorId);
     const generatedTimeslots = await generateTimeslotsFromEvents(isValidate.value, minutePerSlot);
-    let isEventSave = await doctorService.saveEvent(value);
+    let isEventSave = await doctorService.saveEvent(isValidate.value);
     if (isEventSave === 0){
         return res.status(500).json({
             success: false,
@@ -37,7 +37,7 @@ exports.generateTimeSlotByEvent = async (req, res) => {
     try{
         // console.log('generatedTimeslots', generatedTimeslots);
         for (const querydata of generatedTimeslots){
-                let isTimeSlotSave = await doctorService.generateTimeSlot(value.doctorId, querydata, isEventSave);
+            let isTimeSlotSave = await doctorService.generateTimeSlot(isValidate.value.doctorId, querydata, isEventSave);
            
                 if (isTimeSlotSave === 0) {
                 throw new Error('Forcing catch block based on a condition');
@@ -45,6 +45,7 @@ exports.generateTimeSlotByEvent = async (req, res) => {
 
     }
     }catch(err){
+        console.log(err);
         return res.status(500).json({
                 success: false,
                 data: null,
@@ -64,13 +65,33 @@ exports.generateTimeSlotByEvent = async (req, res) => {
     });
 }
 
-exports.customizedRangeTimeSlot = async (req, res) => {
-    const timeslotDurationPerDoctor = 40; // Specify the timeslot duration in minutes for this doctor
+exports.changedRangeTimeSlot = async (req, res) => {
 
-    const generatedTimeslots = generateTimeslotsWithCustomDuration(events, doctorTimeslotDurations);
+    let isValidate = await validateCustomTimeSlot(req.body);
+    if (!isValidate.status) {
+        return res.status(400).json({
+            success: false,
+            data: null,
+            error: {
+                code: 400,
+                message: ('bad Request', isValidate.message)
+            }
+        });
+    }
+    const updateDrTimeSlot = await doctorService.updateTimeSlotDr(isValidate.value);
+    if (!updateDrTimeSlot){
+        return res.status(500).json({
+            success: false,
+            data: null,
+            error: {
+                code: 500,
+                message: "Fail to Update Timeslot Doctor"
+            }
+        });
+    }
     return res.status(200).json({
         success: true,
-        data: generatedTimeslots,
+        data: isValidate.value,
         error: {
             code: 200,
             message: 'Success getAvailableTimeslot'
@@ -225,6 +246,31 @@ async function validateGenerateTimeslot(data) {
             endTime: data.endTime,
             target: data.target,
             value: data.value
+        });
+        validate.value = value;
+    }
+    catch (err) {
+        validate.message = err
+        validate.status = false
+
+    }
+
+    return validate
+}
+async function validateCustomTimeSlot(data) {
+    let validate = {
+        status: true,
+        message: "all is validate",
+
+    };
+    const schema = Joi.object({
+        userId: Joi.number().integer().required(),
+        minutePerSlot: Joi.number().integer().required(),
+    });
+    try {
+        let value = await schema.validateAsync({
+            userId: data.userId,
+            minutePerSlot: data.minutePerSlot,
         });
         validate.value = value;
     }

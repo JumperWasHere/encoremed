@@ -3,14 +3,23 @@ var express = require('express');
 var app = express();
 const cors = require('cors');
 var path = require('path');
+const helmet = require('helmet');
 var authRoute = require('./routes/auth.router');
 var appoitmentRouter = require('./routes/appointment.router');
 var doctorRouter = require('./routes/doctor.router');
-
 app.use(cors({
     origin: '*'
 }));
 app.use(express.json());
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            "script-src": ["'self'", "example.com"],
+            "style-src": null,
+        },
+    },
+    xFrameOptions: { action: "deny" },
+}));
 require('dotenv').config({ path: __dirname + '/.env' });
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
