@@ -7,7 +7,7 @@ const { isDocAuthunticated } = require('../middleware/auth.middleware')
 
 // router.post('/getAvailableTimeslot', isDocAuthunticated, doctor.getAvailableTimeslot)
 router.post('/generateTimeSlot', isDocAuthunticated, doctor.generateTimeSlotByEvent)
-router.post('/customized', doctor.customizedRangeTimeSlot)
+router.post('/changeMinute', isDocAuthunticated, doctor.changedRangeTimeSlot)
 
 
 

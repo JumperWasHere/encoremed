@@ -23,30 +23,29 @@ exports.generateTimeSlotByEvent = async (req, res) => {
             
     const minutePerSlot = await doctorService.getMinutePerSlotByDoctor(isValidate.value.doctorId);
     const generatedTimeslots = await generateTimeslotsFromEvents(isValidate.value, minutePerSlot);
-    // let isEventSave = await doctorService.saveEvent(value);
-    // if (isEventSave === 0){
-    //     return res.status(500).json({
-    //         success: false,
-    //         data: null,
-    //         error: {
-    //             code: 500,
-    //             message: 'Fail to save event, please contact system admin'
-    //         }
-    //     });
-    // }
+    let isEventSave = await doctorService.saveEvent(isValidate.value);
+    if (isEventSave === 0){
+        return res.status(500).json({
+            success: false,
+            data: null,
+            error: {
+                code: 500,
+                message: 'Fail to save event, please contact system admin'
+            }
+        });
+    }
     try{
-
-    //     for (const querydata of generatedTimeslots){
-    //         // async () => {
-    //             console.log(querydata);
-    //         let isTimeSlotSave = await doctorService.generateTimeSlot(value.doctorId, querydata, isEventSave);
+        // console.log('generatedTimeslots', generatedTimeslots);
+        for (const querydata of generatedTimeslots){
+            let isTimeSlotSave = await doctorService.generateTimeSlot(isValidate.value.doctorId, querydata, isEventSave);
            
-    //             if (isTimeSlotSave === 0) {
-    //             throw new Error('Forcing catch block based on a condition');
-    //         }
+                if (isTimeSlotSave === 0) {
+                throw new Error('Forcing catch block based on a condition');
+            }
 
-    // }
+    }
     }catch(err){
+        console.log(err);
         return res.status(500).json({
                 success: false,
                 data: null,
@@ -65,37 +64,34 @@ exports.generateTimeSlotByEvent = async (req, res) => {
         }
     });
 }
-const events = [
-    // {
-    //     eventType: 'specific',
-    //     startDate: '2023-01-05',
-    //     startTime: '10:00',
-    //     endTime: '11:00',
-    //     doctorId: 1 // Doctor ID for this event
-    // },
-    {
-        eventType: 'alternate',
-        startDate: '2023-01-01',
-        endDate: '2023-12-31',
-        startTime: '08:00',
-        endTime: '17:00',
-        target: 'month',
-        value: 2,
-        doctorId: 2 // Doctor ID for this event
-    }
-];
-const doctorTimeslotDurations = {
-    1: 30, // Timeslot duration for Doctor 1 (in minutes)
-    2: 45, // Timeslot duration for Doctor 2 (in minutes)
-    3: 20 // Timeslot duration for Doctor 3 (in minutes)
-};
-exports.customizedRangeTimeSlot = async (req, res) => {
-    const timeslotDurationPerDoctor = 40; // Specify the timeslot duration in minutes for this doctor
 
-    const generatedTimeslots = generateTimeslotsWithCustomDuration(events, doctorTimeslotDurations);
+exports.changedRangeTimeSlot = async (req, res) => {
+
+    let isValidate = await validateCustomTimeSlot(req.body);
+    if (!isValidate.status) {
+        return res.status(400).json({
+            success: false,
+            data: null,
+            error: {
+                code: 400,
+                message: ('bad Request', isValidate.message)
+            }
+        });
+    }
+    const updateDrTimeSlot = await doctorService.updateTimeSlotDr(isValidate.value);
+    if (!updateDrTimeSlot){
+        return res.status(500).json({
+            success: false,
+            data: null,
+            error: {
+                code: 500,
+                message: "Fail to Update Timeslot Doctor"
+            }
+        });
+    }
     return res.status(200).json({
         success: true,
-        data: generatedTimeslots,
+        data: isValidate.value,
         error: {
             code: 200,
             message: 'Success getAvailableTimeslot'
@@ -103,7 +99,7 @@ exports.customizedRangeTimeSlot = async (req, res) => {
     });
 }
 
-function generateTimeslotsFromEvents(event, minutePerSlot) {
+async function generateTimeslotsFromEvents(event, minutePerSlot) {
     const timeslotDuration = minutePerSlot;
     let generatedTimeslots = [];
 
@@ -111,12 +107,8 @@ function generateTimeslotsFromEvents(event, minutePerSlot) {
         switch (event.type) {
             case 'Specific':
                 // For specific events, mark the timeslot within the event's time range as booked
-                generatedTimeslots.push({
-                    date: event.startDate,
-                    startTime: event.startTime,
-                    endTime: event.endTime,
-                    isBooked: true
-                });
+                let tempArray = await generateTimeslot(new Date(event.startDate), event.startTime, event.endTime, timeslotDuration);
+                tempArray.forEach(item => generatedTimeslots.push(item))
                 break;
 
             case 'Alternate':
@@ -149,7 +141,8 @@ function generateTimeslotsFromEvents(event, minutePerSlot) {
                     }
                     // Generate timeslots based on the alternating pattern (e.g., weekly)
                     if (isAlternateDate) {
-                        generatedTimeslots.push(generateTimeslot(currentDate, alternateStartTime, alternateEndTime, timeslotDuration));
+                        let tempArray = await generateTimeslot(currentDate, alternateStartTime, alternateEndTime, timeslotDuration);
+                        tempArray.forEach(item => generatedTimeslots.push(item))
                     }
                     currentDate.setDate(currentDate.getDate() + 1); // Move to the next day
                 }
@@ -180,14 +173,9 @@ function generateTimeslotsFromEvents(event, minutePerSlot) {
                             break;
                     }
                     if (isRepeatingDate) {
-                        generatedTimeslots.push(generateTimeslot(currentRepeatDate, repeatStartTime, repeatEndTime, timeslotDuration));
+                        let tempArray = await generateTimeslot(currentRepeatDate, repeatStartTime, repeatEndTime, timeslotDuration);
+                        tempArray.forEach(item => generatedTimeslots.push(item))
 
-                        // generatedTimeslots.push({
-                        //     date: currentRepeatDate.toISOString().split('T')[0],
-                        //     startTime: repeatStartTime,
-                        //     endTime: repeatEndTime,
-                        //     isBooked: false // Adjust as needed based on logic
-                        // });
                     }
                     currentRepeatDate.setDate(currentRepeatDate.getDate() + 1); // Move to the next day
                 }
@@ -200,19 +188,19 @@ function generateTimeslotsFromEvents(event, minutePerSlot) {
 
     return generatedTimeslots;
 }
-function generateTimeslot(currentDate, startTime, endTime, timeslotDuration) {
+async function generateTimeslot(currentDate, startTime, endTime, timeslotDuration) {
     if (timeslotDuration !== 0) {
-        return customeTimeBasePerDoctor(currentDate, startTime, endTime, timeslotDuration);
+        return await customeTimeBasePerDoctor(currentDate, startTime, endTime, timeslotDuration);
     } else {
-        return {
+        return [{
             date: currentDate.toISOString().split('T')[0],
             startTime: startTime,
             endTime: endTime,
             isBooked: false // Adjust as needed based on logic
-        };
+        }];
     }
 }
-function customeTimeBasePerDoctor(currentDate, startTime, endTime, timeslotDuration){
+async function customeTimeBasePerDoctor(currentDate, startTime, endTime, timeslotDuration){
     let Timeslots = []
     let currentTime = new Date(currentDate);
     while (currentTime < new Date(currentDate).setHours(endTime.split(':')[0], endTime.split(':')[1])) {
@@ -228,7 +216,6 @@ function customeTimeBasePerDoctor(currentDate, startTime, endTime, timeslotDurat
         }
         currentTime = timeslotEndTime;
     }
-    console.log('Timeslots', Timeslots);
     return [...Timeslots];
 }
 
@@ -250,7 +237,7 @@ async function validateGenerateTimeslot(data) {
         value: Joi.number().integer(),
     });
     try {
-        value = await schema.validateAsync({
+        let value = await schema.validateAsync({
             doctorId: data.doctorId,
             type: data.type,
             startDate: data.startDate,
@@ -259,6 +246,31 @@ async function validateGenerateTimeslot(data) {
             endTime: data.endTime,
             target: data.target,
             value: data.value
+        });
+        validate.value = value;
+    }
+    catch (err) {
+        validate.message = err
+        validate.status = false
+
+    }
+
+    return validate
+}
+async function validateCustomTimeSlot(data) {
+    let validate = {
+        status: true,
+        message: "all is validate",
+
+    };
+    const schema = Joi.object({
+        userId: Joi.number().integer().required(),
+        minutePerSlot: Joi.number().integer().required(),
+    });
+    try {
+        let value = await schema.validateAsync({
+            userId: data.userId,
+            minutePerSlot: data.minutePerSlot,
         });
         validate.value = value;
     }

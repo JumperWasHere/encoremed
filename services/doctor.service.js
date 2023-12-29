@@ -27,8 +27,13 @@ async function saveEvent(data){
 
 async function generateTimeSlot(doctorId, data, isEventSave){
     let insertId = 0
-    let query = `INSERT INTO [TimeSlot] ([doctorId],[eventId],[date],[startTime],[endTime],[isBooked],[createdAt],[updatedAt],[createdById],[updatedById]) 
-    VALUES (@doctorId, @eventId, @date, @startTime, @endTime, @isBooked, @createdAt, @updatedAt, @createdById, @updatedById)`;
+    let query = `
+    If Not Exists (SELECT 1 FROM [TimeSlot] WHERE doctorId = @doctorId AND date = @date AND startTime = @startTime AND endTime = @endTime)
+    Begin
+    INSERT INTO [TimeSlot] ([doctorId],[eventId],[date],[startTime],[endTime],[isBooked],[createdAt],[updatedAt],[createdById],[updatedById]) 
+    VALUES (@doctorId, @eventId, @date, @startTime, @endTime, @isBooked, @createdAt, @updatedAt, @createdById, @updatedById)
+    End
+    `;
 
     let inputParams = {
         doctorId: doctorId,
@@ -36,6 +41,9 @@ async function generateTimeSlot(doctorId, data, isEventSave){
         date: data.date,
         startTime: data.startTime,
         endTime: data.endTime,
+        // date2: data.date,
+        // startTime2: data.startTime,
+        // endTime2: data.endTime,
         isBooked: 'false',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -81,10 +89,26 @@ async function getMinutePerSlotByDoctor(doctorId){
 
         if (result.recordsets[0].length > 0) {
             totalMinute = result.recordsets[0][0].minutePerSlot;
+            totalMinute = Number.isInteger(totalMinute) ? totalMinute : 0;
         }
     })
     return totalMinute;
 }
+async function updateTimeSlotDr(data) {
+    let updateStatus = true;
+    let query = `UPDATE Doctor SET minutePerSlot= @minutePerSlot where  userId = @userId`
+    let inputParams = {
+        minutePerSlot: data.minutePerSlot,
+        userId: data.userId
+    }
+    await db.executeSql2(query, inputParams, async (result, err) => {
+        if (err) {
+        console.log(err)
+        updateStatus = false
+    };
 
+    })
+    return updateStatus;
+}
 
-module.exports = { saveEvent, generateTimeSlot, getDoctorTImeSlot, getMinutePerSlotByDoctor }
+module.exports = { saveEvent, generateTimeSlot, getDoctorTImeSlot, getMinutePerSlotByDoctor, updateTimeSlotDr }
