@@ -2,14 +2,11 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 
-
-
-
 exports.dbConfig = {
-    server: 'DESKTOP-AA0B2D3',
-    database: 'Ecomed',
-    user: 'jumper2',
-    password: "abc123",
+    server: process.env.CON_SERVER,
+    database: process.env.CON_DATABASE,
+    user: process.env.CON_USER,
+    password: process.env.CON_PASSWORD,
     connectionTimeout: 160000,
     requestTimeout: 160000,
     port: 1433,

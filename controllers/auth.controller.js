@@ -1,22 +1,20 @@
 'use strict'
 const bcrypt = require('bcrypt');
-const saltRounds = 10;
 const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
-const Joi = require('joi');
 const authService = require('../services/auth.service')
+const { hashPassword, comparePassword } = require('../utils/helpers')
+const { validateInputLogin, validateInputRegister } = require('../utils/requestValidator')
 dotenv.config();
 
 
-
 exports.login = async (req, res) => {
+  
     await handleLogin(req, res)
 
 }
-exports.register = async (req, res, next) => {
-    // const { email, confirm_password, username, fullname, role } = req.body;
+exports.register = async (req, res) => {
     let password = req.body.password;
-    let passwordEncrpt = '';
     let isValidate = await validateInputRegister(req.body);
     if (!isValidate.status) {
         return res.status(400).json({
@@ -30,7 +28,7 @@ exports.register = async (req, res, next) => {
     }
     try {
         let validEmail = await authService.checkUserEmail(isValidate.value.email);
-        if (validEmail === true) {
+        if (validEmail) {
             return res.status(403).json({
                 success: false,
                 data: null,
@@ -41,16 +39,10 @@ exports.register = async (req, res, next) => {
             });
             
         }
-        await bcrypt.hash(password, saltRounds).then(function (hash) {
-            // Store hash in your password DB.
-            passwordEncrpt = hash;
-        });
-        password = passwordEncrpt;
+        password = hashPassword(password);
 
-        
-
-        let userId = await authService.registerUser(password,req.body);
-            if (userId == 0) {
+        let userAccessId = await authService.registerUser(password,isValidate.value);
+            if (userAccessId == 0) {
                 return res.status(500).json({
                     success: false,
                     data: null,
@@ -62,7 +54,7 @@ exports.register = async (req, res, next) => {
             }
         if (isValidate.value.role === "Doctor") {
 
-            let doctorId = await authService.registerDoctorDetails(userId,req.body);
+            let doctorId = await authService.registerDoctorDetails(userAccessId, isValidate.value);
             if (doctorId == 0) {
                 return res.status(500).json({
                     success: false,
@@ -74,7 +66,7 @@ exports.register = async (req, res, next) => {
                 });
             }
         } else {
-            let patientId = await authService.registerPatientDetails(userId, req.body);
+            let patientId = await authService.registerPatientDetails(userAccessId, isValidate.value);
             if (patientId == 0) {
                 return res.status(500).json({
                     success: false,
@@ -99,7 +91,14 @@ exports.register = async (req, res, next) => {
 
   
     } catch (err) {
-        return next(err);
+        return res.status(500).json({
+            success: false,
+            data: null,
+            error: {
+                code: 500,
+                message: err
+            }
+        });
     }
 
 
@@ -109,9 +108,20 @@ exports.register = async (req, res, next) => {
 
 
 async function handleLogin(req, res) {
-    const { email, password } = req.body;
+
+    let isValidate = await validateInputLogin(req.body);
+    if (!isValidate.status) {
+        return res.status(400).json({
+            success: false,
+            data: null,
+            error: {
+                code: 400,
+                message: ('bad Request', isValidate.message)
+            }
+        });
+    }
    
-    let user = await authService.getUserByEmail(email);
+    let user = await authService.getUserByEmail(isValidate.value.email);
 
     if (!user) {
         return res.status(500).json({
@@ -127,13 +137,12 @@ async function handleLogin(req, res) {
         res.send('invalid email');
         return
     }
-    console.log('user', user);
-    let isMatch = await comparePassword(user.password, password);
+    let isMatch = await comparePassword(isValidate.value.password,user.password);
     if (isMatch) {
         return res.status(200).json({
-            success: false,
+            success: true,
             data: user,
-            token: await generateAccessToken({ username: email, role: user.role }),
+            token: await generateAccessToken({ username: isValidate.value.email, role: user.role }),
             error: {
                 code: 200,
                 message: 'User authorization successful'
@@ -145,92 +154,12 @@ async function handleLogin(req, res) {
     }
 
 }
-async function comparePassword(passwordHash, password) {
-    let isMatch = false;
 
-    const match = await bcrypt.compare(password, passwordHash);
-
-    if (match) {
-        //login
-        isMatch = true;
-    }
-    return isMatch;
-}
-async function generateAccessToken(user,role) {
+async function generateAccessToken(user) {
     return jwt.sign(user, process.env.TOKEN_SECRET);
 }
-async function validateInputLogin(data) {
-    let validate = {
-        status: true,
-        message: "all is validate",
 
-    };
-    const schema = Joi.object({
-        patientId: Joi.number().integer().required(),
-        doctorId: Joi.number().integer().required(),
-        timeslotId: Joi.number().integer().required(),
-        purpose: Joi.string().min(0).max(30),
-    });
-    try {
-        let value = await schema.validateAsync({
-            patientId: data.patientId,
-            doctorId: data.doctorId,
-            timeslotId: data.timeslotId,
-            purpose: data.purpose,
-        });
-        validate.value = value;
-    }
-    catch (err) {
-        validate.message = err
-        validate.status = false
 
-    }
-
-    return validate
-}
-async function validateInputRegister(data) {
-    let validate = {
-        status: true,
-        message: "all is validate",
-        value:{}
-    };
-    const schema = Joi.object({
-        email: Joi.string().email().required(),
-        password: Joi.string().min(6).max(12).required(),
-        confirm_password: Joi.ref('password'),
-        username: Joi.string().min(3).max(30).required(),
-        fullname: Joi.string().required(),
-        phoneNumber: Joi.string().required(),
-        address: Joi.string(),
-        role: Joi.string().valid('Patient', 'Doctor').required(),
-        specialities: Joi.string(),
-        clinicName: Joi.string(),
-
-    });
-    try {
-        let value = await schema.validateAsync({
-            email: data.email,
-            password: data.password,
-            confirm_password: data.confirm_password,
-            username: data.username,
-            fullname: data.fullname,
-            phoneNumber: data.phoneNumber,
-            address: data.address,
-            role: data.role,
-            specialities: data.specialities,
-            clinicName: data.clinicName,
-        });
-        validate.value = value;
-    }
-    catch (err) {
-        console.log('err', err);
-        validate.message = err
-        validate.status = false
-
-    }
-
-    return validate
-}
 
 
 

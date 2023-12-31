@@ -2,7 +2,7 @@ const db = require('../dbConnection/db');
 
 async function getUserByEmail(email) {
     let user = [];
-    let query = 'SELECT * FROM [Users] WHERE [email] = @email  ';
+    let query = 'SELECT * FROM [UsersAccess] WHERE [email] = @email  ';
     let inputParams = {
         email: email
     }
@@ -17,8 +17,8 @@ async function getUserByEmail(email) {
     return user;
 }
 async function registerUser(password, data) {
-    let userId = 0
-    let query = `INSERT INTO [Users] ([email], [password], [role],[createdAt],[updatedAt]) 
+    let UsersAccessId = 0
+    let query = `INSERT INTO [UsersAccess] ([email], [password], [role],[createdAt],[updatedAt]) 
     VALUES (@email, @password, @role, @createdAt, @updatedAt)`;
 
     let inputParams = {
@@ -31,18 +31,18 @@ async function registerUser(password, data) {
     await db.executeSql2(query, inputParams, async (result, err) => {
         if (err) console.log(err);
 
-        userId = result.recordset[0].insertID;
-        console.log('userId', userId);
+        UsersAccessId = result.recordset[0].insertID;
+        console.log('UsersAccessId', UsersAccessId);
     })
-    return userId;
+    return UsersAccessId;
 }
-async function registerDoctorDetails(userId, data) {
+async function registerDoctorDetails(userAccessId, data) {
     let drId = 0
-    let query = `INSERT INTO [Doctor] ([userId],[username], [fullname], [specialities],[clinicName],[phoneNumber],[address],[createdAt],[updatedAt]) 
-    VALUES (@userId, @username, @fullname, @specialities, @clinicName, @phoneNumber, @address, @createdAt, @updatedAt)`;
+    let query = `INSERT INTO [Doctor] ([userAccessId],[username], [fullname], [specialities],[clinicName],[phoneNumber],[address],[createdAt],[updatedAt]) 
+    VALUES (@userAccessId, @username, @fullname, @specialities, @clinicName, @phoneNumber, @address, @createdAt, @updatedAt)`;
 
     let inputParams = {
-        userId: userId,
+        userAccessId: userAccessId,
         username: data.username,
         fullname: data.fullname,
         specialities: data.specialities,
@@ -62,13 +62,13 @@ async function registerDoctorDetails(userId, data) {
     })
     return drId;
 }
-async function registerPatientDetails(userId, data) {
+async function registerPatientDetails(userAccessId, data) {
     let drId = 0
-    let query = `INSERT INTO [Patient] ([userId],[username], [fullname], [phoneNumber],[address],[createdAt],[updatedAt]) 
-    VALUES (@userId, @username, @fullname, @phoneNumber, @address, @createdAt, @updatedAt)`;
+    let query = `INSERT INTO [Patient] ([userAccessId],[username], [fullname], [phoneNumber],[address],[createdAt],[updatedAt]) 
+    VALUES (@userAccessId, @username, @fullname, @phoneNumber, @address, @createdAt, @updatedAt)`;
 
     let inputParams = {
-        userId: userId,
+        userAccessId: userAccessId,
         username: data.username,
         fullname: data.fullname,
         phoneNumber: data.phoneNumber,
@@ -88,7 +88,7 @@ async function registerPatientDetails(userId, data) {
 }
 async function checkUserEmail(email) {
     let isExist = false
-    const query = 'SELECT ID FROM [Users] WHERE Email = @email';
+    const query = 'SELECT ID FROM [UsersAccess] WHERE Email = @email';
     const inputParams = {
         email: email
     };
