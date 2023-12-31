@@ -20,9 +20,11 @@
     "jade": "^1.11.0",
     "joi": "^17.11.0",
     "jsonwebtoken": "^9.0.2",
+    "loadtest": "^8.0.6",
     "morgan": "^1.10.0",
     "mssql": "^10.0.1",
     "nodemon": "^3.0.2",
-    "pbkdf2-password": "^1.2.1"
+    "pbkdf2-password": "^1.2.1",
+    "pm2": "^5.3.0"
   }
 }
