@@ -20,10 +20,11 @@ exports.generateTimeSlotByEvent = async (req, res) => {
             }
         });
     }
-
-            
+    
     const minutePerSlot = await doctorService.getMinutePerSlotByDoctor(isValidate.value.doctorId);
     const generatedTimeslots = await generateTimeslotsFromEvents(isValidate.value, minutePerSlot);
+    
+    try {
     let isEventSave = await doctorService.saveEvent(isValidate.value);
     if (isEventSave === 0){
         return res.status(500).json({
@@ -35,11 +36,12 @@ exports.generateTimeSlotByEvent = async (req, res) => {
             }
         });
     }
-    try{
-        // console.log('generatedTimeslots', generatedTimeslots);
+    
+        console.log('generatedTimeslots', generatedTimeslots);
         for (const querydata of generatedTimeslots){
+            
             let isTimeSlotSave = await doctorService.generateTimeSlot(isValidate.value.doctorId, querydata, isEventSave);
-           
+          
                 if (isTimeSlotSave === 0) {
                 throw new Error('Forcing catch block based on a condition');
             }
@@ -61,7 +63,7 @@ exports.generateTimeSlotByEvent = async (req, res) => {
         data: generatedTimeslots,
         error: {
             code: 200,
-            message: 'Success getAvailableTimeslot'
+            message: 'Success generate Time Slot'
         }
     });
 }
@@ -169,12 +171,15 @@ async function generateTimeslotsFromEvents(event, minutePerSlot) {
                             break;
                         case 'month':
                             isRepeatingDate = (currentRepeatDate.getMonth()+1) % repeatValue === 0;
+                            console.log('repeat', (currentRepeatDate.getMonth() + 1) % repeatValue === 0);
+
                             break;
                         default:
                             break;
                     }
                     if (isRepeatingDate) {
                         let tempArray = await generateTimeslot(currentRepeatDate, repeatStartTime, repeatEndTime, timeslotDuration);
+                        console.log('tempArray', tempArray);
                         tempArray.forEach(item => generatedTimeslots.push(item))
 
                     }

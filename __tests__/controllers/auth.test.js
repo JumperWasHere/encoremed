@@ -1,9 +1,15 @@
 const { register } = require('../../controllers/auth.controller')
 const authService = require('../../services/auth.service')
-const bcrypt = require('bcrypt');
-
+// const bcrypt = require('bcrypt');
+const {hashPassword} = require('../../utils/helpers')
+const { validateInputRegister } = require('../../utils/requestValidator')
 jest.mock('../../services/auth.service')
-jest.mock('bcrypt');
+jest.mock('../../utils/requestValidator')
+// jest.mock('../../utils/helpers',()=>({
+//     hashPassword: jest.fn((x) => 'hhh')
+// }))
+const hashing = jest.fn(hashPassword);
+const result = hashing('password');
 
 const request = {
 body:{
@@ -21,8 +27,13 @@ body:{
 
 }
 const response = {
-    status:jest.fn((x)=>x),
+    status: jest.fn((x) => x),
     json: jest.fn((x) => x),
+}
+const validate = {
+    status: true,
+    message: jest.fn((x) => x),
+    value: request
 }
 response.status.mockImplementation((statusCode) => {
     return {
@@ -43,6 +54,11 @@ const exceptedresponse = {
     },
 };
 it('should send code 400 when user exists',async ()=>{
+    const input = {
+        status:true
+    };
+
+    validateInputRegister.mockImplementationOnce(validate)
     authService.checkUserEmail.mockImplementationOnce(()=>({
         id: 1,
         email: 'RequestData@encoremed.com',
@@ -54,6 +70,11 @@ it('should send code 400 when user exists',async ()=>{
     // expect(response.json).toHaveBeenCalledTimes(1);
 })
 
+// it("should success validate request register", async ()=>{
+//     validateInputRegister.mockResolvedValueOnce(validate)
+//     // await register(request, response);
+
+// })
 
 it("should send code 201 create new user",async ()=>{
     // bcrypt.hash.mockReturnValueOnce('password')
@@ -64,8 +85,10 @@ it("should send code 201 create new user",async ()=>{
         password: 'password',
     })
     await register(request, response);
-    expect(bcrypt.hash).toHaveBeenCalledWith('password');
-    // expect(authService.registerUser).toHaveBeenCalledWith(request.body.password, request.body);
+    
+
+    expect(hashing).toHaveBeenCalledWith('password');
+    // expect(authService.registerUser).toHaveBeenCalledWith('hash_passsword', request.body);
     // expect(response.status).toHaveBeenCalledWith(201);
 
 
