@@ -1,6 +1,7 @@
 const dotenv = require('dotenv');
 const Joi = require('joi');
 const doctorService = require('../services/doctor.service')
+const { validateCustomTimeSlot, validateGenerateTimeslot } = require('../utils/requestValidator')
 dotenv.config();
 
 
@@ -220,65 +221,4 @@ async function customeTimeBasePerDoctor(currentDate, startTime, endTime, timeslo
 }
 
 
-async function validateGenerateTimeslot(data) {
-    let validate = {
-        status: true,
-        message: "all is validate",
 
-    };
-    const schema = Joi.object({
-        doctorId: Joi.number().integer().required(),
-        type: Joi.string().valid('Specific', 'Alternate', 'Repeat').required(),
-        startDate: Joi.string().required(),
-        endDate: Joi.string(),
-        startTime: Joi.string().required(),
-        endTime: Joi.string().required(),
-        target: Joi.string().valid('day', 'month', 'year'),
-        value: Joi.number().integer(),
-    });
-    try {
-        let value = await schema.validateAsync({
-            doctorId: data.doctorId,
-            type: data.type,
-            startDate: data.startDate,
-            endDate: data.endDate,
-            startTime: data.startTime,
-            endTime: data.endTime,
-            target: data.target,
-            value: data.value
-        });
-        validate.value = value;
-    }
-    catch (err) {
-        validate.message = err
-        validate.status = false
-
-    }
-
-    return validate
-}
-async function validateCustomTimeSlot(data) {
-    let validate = {
-        status: true,
-        message: "all is validate",
-
-    };
-    const schema = Joi.object({
-        userId: Joi.number().integer().required(),
-        minutePerSlot: Joi.number().integer().required(),
-    });
-    try {
-        let value = await schema.validateAsync({
-            userId: data.userId,
-            minutePerSlot: data.minutePerSlot,
-        });
-        validate.value = value;
-    }
-    catch (err) {
-        validate.message = err
-        validate.status = false
-
-    }
-
-    return validate
-}

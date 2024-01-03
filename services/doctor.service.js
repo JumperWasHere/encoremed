@@ -1,4 +1,3 @@
-const { func } = require('joi');
 const db = require('../dbConnection/db');
 
 async function saveEvent(data){
@@ -20,7 +19,6 @@ async function saveEvent(data){
         if (err) console.log(err);
 
         insertId = result.recordset[0].insertID;
-        // console.log('userId', userId);
     })
     return insertId;
 }
@@ -54,7 +52,6 @@ async function generateTimeSlot(doctorId, data, isEventSave){
         if (err) console.log(err);
 
         insertId = result.recordset[0].insertID;
-        // console.log('userId', userId);
     })
     return insertId;
 }
@@ -80,7 +77,7 @@ async function getDoctorTImeSlot(data) {
 }
 async function getMinutePerSlotByDoctor(doctorId){
     let totalMinute = 0;
-    let query = `Select minutePerSlot FROM [Doctor] where  userId = @doctorId`
+    let query = `Select minutePerSlot FROM [Doctor] where  id = @doctorId`
     let inputParams = {
         doctorId: doctorId,
     }
@@ -96,10 +93,10 @@ async function getMinutePerSlotByDoctor(doctorId){
 }
 async function updateTimeSlotDr(data) {
     let updateStatus = true;
-    let query = `UPDATE Doctor SET minutePerSlot= @minutePerSlot where  userId = @userId`
+    let query = `UPDATE Doctor SET minutePerSlot= @minutePerSlot where  id = @doctorId`
     let inputParams = {
         minutePerSlot: data.minutePerSlot,
-        userId: data.userId
+        doctorId: data.doctorId
     }
     await db.executeSql2(query, inputParams, async (result, err) => {
         if (err) {

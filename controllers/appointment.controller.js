@@ -1,8 +1,6 @@
 const dotenv = require('dotenv');
-const db = require('../dbConnection/db');
-const Joi = require('joi');
 const appointmentService = require('../services/appointment.service')
-const Queue = require('bull');
+const { validateInputBooking, validateInputgetTimeslot } = require('../utils/requestValidator')
 
 dotenv.config();
 exports.booking = async (req, res) => {
@@ -90,59 +88,4 @@ exports.getAvailableTimeslot = async (req, res) => {
 
 }
 
-async function validateInputgetTimeslot(data) {
-    let validate = {
-        status: true,
-        message: "all is validate",
 
-    };
-    const schema = Joi.object({
-        doctorId: Joi.number().integer().required(),
-        startDate: Joi.string().required(),
-        endDate: Joi.string().required(),
-    });
-    try {
-        let value = await schema.validateAsync({
-            doctorId: data.doctorId,
-            startDate: data.startDate,
-            endDate: data.endDate,
-        });
-        validate.value = value;
-    }
-    catch (err) {
-        validate.message = err
-        validate.status = false
-
-    }
-
-    return validate
-}
-async function validateInputBooking(data) {
-    let validate = {
-        status: true,
-        message: "all is validate",
-
-    };
-    const schema = Joi.object({
-        patientId: Joi.number().integer().required(),
-        doctorId: Joi.number().integer().required(),
-        timeslotId: Joi.number().integer().required(),
-        purpose: Joi.string().min(0).max(30),
-    });
-    try {
-        let value = await schema.validateAsync({
-            patientId: data.patientId,
-            doctorId: data.doctorId,
-            timeslotId: data.timeslotId,
-            purpose: data.purpose,
-        });
-        validate.value = value;
-    }
-    catch (err) {
-        validate.message = err
-        validate.status = false
-
-    }
-
-    return validate
-}
