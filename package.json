@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "test": "jest",
-    "start": "nodemon ./bin/www"
+    "start": "nodemon ./bin/www",
+    "cluster": "node primary.js"
   },
   "author": "ariff naj",
   "license": "ISC",

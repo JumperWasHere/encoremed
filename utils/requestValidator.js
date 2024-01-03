@@ -163,7 +163,7 @@ async function validateGenerateTimeslot(data) {
         endDate: Joi.string(),
         startTime: Joi.string().required(),
         endTime: Joi.string().required(),
-        target: Joi.string().valid('day', 'month', 'year'),
+        target: Joi.string().valid('day', 'month', 'week'),
         value: Joi.number().integer(),
     });
     try {
