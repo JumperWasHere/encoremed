@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-
+//middleware to authhenticate user doctor
 function authenticateTokenDoctor(req, res, next) {
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]
@@ -16,6 +16,7 @@ function authenticateTokenDoctor(req, res, next) {
         next()
     })
 }
+//middleware to authhenticate user pattient
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]

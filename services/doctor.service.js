@@ -1,5 +1,5 @@
 const db = require('../dbConnection/db');
-
+// create event  record
 async function saveEvent(data){
     let insertId = 0
     try {
@@ -19,13 +19,6 @@ async function saveEvent(data){
     const result = await new Promise((resolve, reject) => {
 
      db.executeSql2(query, inputParams, async (result, err) => {
-        // if (err) console.log('err saveEvent',err);
-
-        // // console.log('1',result.recordsets);
-        // console.log('2',result);
-        // if (result.recordsets[0].length > 0) {
-        //     insertId = result.recordset[0].insertID;
-        // }
          if (err) {
              reject(err); // Reject the promise with the error
          } else {
@@ -41,11 +34,11 @@ async function saveEvent(data){
     }
     return insertId;
 }
-
+// craete time slot doctor
 async function generateTimeSlot(doctorId, data, isEventSave){
     let insertId = 0
     try{
-
+        // is create new time slot if date, start time and end time and doctor is not exist yet, 
         let query = `
         If Not Exists (SELECT 1 FROM [TimeSlot] WHERE doctorId = @doctorId AND date = @date AND startTime = @startTime AND endTime = @endTime)
         Begin
@@ -79,6 +72,7 @@ async function generateTimeSlot(doctorId, data, isEventSave){
     }
     return insertId;
 }
+// get doctor time slot
 async function getDoctorTImeSlot(data) {
     let collection = [];
     let query = `Select [id],[doctorId],[eventId],[date],CONVERT(VARCHAR, startTime, 108) AS startTime ,CONVERT(VARCHAR, endTime, 108) AS endTime ,[isBooked]
@@ -99,6 +93,7 @@ async function getDoctorTImeSlot(data) {
     })
     return collection;
 }
+// get minute per slot at doctor table
 async function getMinutePerSlotByDoctor(doctorId){
     let totalMinute = 0;
     let query = `Select minutePerSlot FROM [Doctor] where  id = @doctorId`
@@ -115,6 +110,7 @@ async function getMinutePerSlotByDoctor(doctorId){
     })
     return totalMinute;
 }
+// updating minute per slot doctor table
 async function updateTimeSlotDr(data) {
     let updateStatus = true;
     let query = `UPDATE Doctor SET minutePerSlot= @minutePerSlot where  id = @doctorId`

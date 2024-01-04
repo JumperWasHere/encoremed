@@ -1,10 +1,11 @@
 const dotenv = require('dotenv');
 const appointmentService = require('../services/appointment.service')
 const { validateInputBooking, validateInputgetTimeslot } = require('../utils/requestValidator')
-
 dotenv.config();
+
 exports.booking = async (req, res) => {
     try {
+        // step 1: input validation
         let isValidate = await validateInputBooking(req.body);
         if (!isValidate.status) {
             return res.status(400).json({
@@ -16,7 +17,8 @@ exports.booking = async (req, res) => {
                 }
             });
         }
-        isbooked = await appointmentService.checkTImeSlot(isValidate.value);// retrun false is timeslot is avaiable
+        // step 2: check is selected avaibility time slot, return value false or true
+        isbooked = await appointmentService.checkTImeSlot(isValidate.value);
         if (isbooked) {
             return res.status(500).json({
                 success: false,
@@ -27,7 +29,8 @@ exports.booking = async (req, res) => {
                 }
             });
         }
-        let createAppointment = await appointmentService.createAppoitment(isValidate.value);
+        // step 3: create an appointment
+        let createAppointment = await appointmentService.createAppointment(isValidate.value);
         if (!createAppointment) {
             return res.status(500).json({
                 success: false,
@@ -38,7 +41,9 @@ exports.booking = async (req, res) => {
                 }
             });
         }
-        await appointmentService.updateTimeSlot(isValidate.value.timeslotId);// update status time slot
+        // step 4: update the time slot avaibility
+        await appointmentService.updateTimeSlot(isValidate.value.timeslotId);
+        // step 5: send response to client with code 201, appointment is created
         return res.status(201).json({
             success: true,
             data: createAppointment,
@@ -48,6 +53,7 @@ exports.booking = async (req, res) => {
             }
         });
     } catch (error) {
+        // catch error if there problem 
         console.error(error);
         return res.status(500).json({
             success: false,
@@ -62,7 +68,7 @@ exports.booking = async (req, res) => {
 
 
 exports.getAvailableTimeslot = async (req, res) => {
-
+    // step 1: request validation
     let isValidate = await validateInputgetTimeslot(req.body);
     if (!isValidate.status) {
         return res.status(400).json({
@@ -74,6 +80,7 @@ exports.getAvailableTimeslot = async (req, res) => {
             }
         });
     }
+    // step 2: get all avaiable time slot by start and end date, and by doctor id
     let timeslot = await appointmentService.getTImeSlotByDocId(isValidate.value);
     return res.status(200).json({
         success: true,

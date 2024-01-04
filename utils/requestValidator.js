@@ -1,5 +1,5 @@
 const Joi = require('joi');
-
+// function input validation for login
 async function validateInputLogin(data) {
     let validate = {
         status: true,
@@ -25,7 +25,7 @@ async function validateInputLogin(data) {
 
     return validate
 }
-
+// function input validation for register
 async function validateInputRegister(data) {
     let validate = {
         status: true,
@@ -69,6 +69,7 @@ async function validateInputRegister(data) {
 
     return validate
 }
+// function input validation for booking appointment
 async function validateInputBooking(data) {
     let validate = {
         status: true,
@@ -98,6 +99,7 @@ async function validateInputBooking(data) {
 
     return validate
 }
+// function input validation for get doctor time slot
 async function validateInputgetTimeslot(data) {
     let validate = {
         status: true,
@@ -125,6 +127,7 @@ async function validateInputgetTimeslot(data) {
 
     return validate
 }
+// function input validation for update doctor minute per slot column
 async function validateCustomTimeSlot(data) {
     let validate = {
         status: true,
@@ -150,6 +153,7 @@ async function validateCustomTimeSlot(data) {
 
     return validate
 }
+// function input validation for event to generate doctor time slot 
 async function validateGenerateTimeslot(data) {
     let validate = {
         status: true,

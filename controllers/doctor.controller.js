@@ -7,9 +7,8 @@ dotenv.config();
 
 
 exports.generateTimeSlotByEvent = async (req, res) => {
-    // let value;
+    // Step 1: input validation
     let isValidate = await validateGenerateTimeslot(req.body);
-
     if (!isValidate.status) {
         return res.status(400).json({
             success: false,
@@ -20,11 +19,13 @@ exports.generateTimeSlotByEvent = async (req, res) => {
             }
         });
     }
-    
+    // step 2: get custom minute per doctor at doctor table
     const minutePerSlot = await doctorService.getMinutePerSlotByDoctor(isValidate.value.doctorId);
+    // step 3: generate object array for time slot data, via event details and custom minute per doctor
     const generatedTimeslots = await generateTimeslotsFromEvents(isValidate.value, minutePerSlot);
     
     try {
+    // step 4: save event details to event table   
     let isEventSave = await doctorService.saveEvent(isValidate.value);
     if (isEventSave === 0){
         return res.status(500).json({
@@ -37,11 +38,10 @@ exports.generateTimeSlotByEvent = async (req, res) => {
         });
     }
     
-        console.log('generatedTimeslots', generatedTimeslots);
         for (const querydata of generatedTimeslots){
-            
+            // step 5: save all generated time slot to timeslot table
             let isTimeSlotSave = await doctorService.generateTimeSlot(isValidate.value.doctorId, querydata, isEventSave);
-          
+                // if fail to insert 
                 if (isTimeSlotSave === 0) {
                 throw new Error('Forcing catch block based on a condition');
             }
@@ -58,6 +58,7 @@ exports.generateTimeSlotByEvent = async (req, res) => {
                 }
             });
     }
+    // step 6: send response success message  
     return res.status(200).json({
         success: true,
         data: generatedTimeslots,
@@ -69,7 +70,7 @@ exports.generateTimeSlotByEvent = async (req, res) => {
 }
 
 exports.changedRangeTimeSlot = async (req, res) => {
-
+    // step 1: input validation
     let isValidate = await validateCustomTimeSlot(req.body);
     if (!isValidate.status) {
         return res.status(400).json({
@@ -81,6 +82,7 @@ exports.changedRangeTimeSlot = async (req, res) => {
             }
         });
     }
+    // step 2: update column minuteperslot at doctor table 
     const updateDrTimeSlot = await doctorService.updateTimeSlotDr(isValidate.value);
     if (!updateDrTimeSlot){
         return res.status(500).json({
@@ -92,6 +94,7 @@ exports.changedRangeTimeSlot = async (req, res) => {
             }
         });
     }
+    // step 3: send success response
     return res.status(200).json({
         success: true,
         data: isValidate.value,
@@ -101,15 +104,14 @@ exports.changedRangeTimeSlot = async (req, res) => {
         }
     });
 }
-
+// generate time slot base on event and minute per slot
 async function generateTimeslotsFromEvents(event, minutePerSlot) {
     const timeslotDuration = minutePerSlot;
     let generatedTimeslots = [];
 
-    // events.forEach(event => {
         switch (event.type) {
             case 'Specific':
-                // For specific events, mark the timeslot within the event's time range as booked
+                // function to generate multiple time slot per day, base on minute per time slot
                 let tempArray = await generateTimeslot(new Date(event.startDate), event.startTime, event.endTime, timeslotDuration);
                 tempArray.forEach(item => generatedTimeslots.push(item))
                 break;
@@ -124,9 +126,10 @@ async function generateTimeslotsFromEvents(event, minutePerSlot) {
                 const value = event.value; // e.g., 1
 
                 let currentDate = new Date(alternateStartDate);
+                // loop all date from star to end date on event details
                 while (currentDate <= alternateEndDate) {
                     let isAlternateDate = false;
-
+                    // if condition for target value
                     switch (target) {
                         case 'day':
                             isAlternateDate = currentDate.getDate() % value === 1;
@@ -136,14 +139,13 @@ async function generateTimeslotsFromEvents(event, minutePerSlot) {
 
                             break;
                         case 'month':
-
                             isAlternateDate = (currentDate.getMonth() % value === 0) && (currentDate.getDate() === alternateStartDate.getDate());
                             break;
                         default:
                             break;
                     }
-                    // Generate timeslots based on the alternating pattern (e.g., weekly)
                     if (isAlternateDate) {
+                        // function to generate multiple time slot per day, base on minute per time slot
                         let tempArray = await generateTimeslot(currentDate, alternateStartTime, alternateEndTime, timeslotDuration);
                         tempArray.forEach(item => generatedTimeslots.push(item))
                     }
@@ -178,8 +180,8 @@ async function generateTimeslotsFromEvents(event, minutePerSlot) {
                             break;
                     }
                     if (isRepeatingDate) {
+                        // function to generate multiple time slot per day, base on minute per time slot
                         let tempArray = await generateTimeslot(currentRepeatDate, repeatStartTime, repeatEndTime, timeslotDuration);
-                        console.log('tempArray', tempArray);
                         tempArray.forEach(item => generatedTimeslots.push(item))
 
                     }
@@ -195,6 +197,7 @@ async function generateTimeslotsFromEvents(event, minutePerSlot) {
     return generatedTimeslots;
 }
 async function generateTimeslot(currentDate, startTime, endTime, timeslotDuration) {
+    // check is doctor have state specific minute per slot
     if (timeslotDuration !== 0) {
         return await customeTimeBasePerDoctor(currentDate, startTime, endTime, timeslotDuration);
     } else {
@@ -206,6 +209,7 @@ async function generateTimeslot(currentDate, startTime, endTime, timeslotDuratio
         }];
     }
 }
+// function to generate slot time by minute
 async function customeTimeBasePerDoctor(currentDate, startTime, endTime, timeslotDuration){
     let Timeslots = []
     let currentTime = new Date(currentDate);
@@ -222,7 +226,7 @@ async function customeTimeBasePerDoctor(currentDate, startTime, endTime, timeslo
         }
         currentTime = timeslotEndTime;
     }
-    return [...Timeslots];
+    return [...Timeslots]; 
 }
 
 

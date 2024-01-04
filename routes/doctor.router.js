@@ -4,9 +4,9 @@ const doctor = require('../controllers/doctor.controller')
 const { isDocAuthunticated } = require('../middleware/auth.middleware')
 
 
-
-// router.post('/getAvailableTimeslot', isDocAuthunticated, doctor.getAvailableTimeslot)
+// doctor to generate timeslot
 router.post('/generateTimeSlot', isDocAuthunticated, doctor.generateTimeSlotByEvent)
+// doctor update column minuteperslot value
 router.post('/changeMinute', isDocAuthunticated, doctor.changedRangeTimeSlot)
 
 

@@ -108,7 +108,7 @@ exports.register = async (req, res) => {
 
 
 async function handleLogin(req, res) {
-
+    // step 1: validate input
     let isValidate = await validateInputLogin(req.body);
     if (!isValidate.status) {
         return res.status(400).json({
@@ -120,7 +120,7 @@ async function handleLogin(req, res) {
             }
         });
     }
-   
+   // step 2: get user data by email
     let user = await authService.getUserByEmail(isValidate.value.email);
 
     if (!user) {
@@ -133,12 +133,15 @@ async function handleLogin(req, res) {
             }
         });
     }
+    //check is user exist
     if (Array.isArray(user) && user.length === 0){
         res.send('invalid email');
         return
     }
+    // step 3: compare user password with request password, return true or false
     let isMatch = await comparePassword(isValidate.value.password,user.password);
     if (isMatch) {
+        // step 4: send response to user with token access
         return res.status(200).json({
             success: true,
             data: user,
@@ -150,11 +153,18 @@ async function handleLogin(req, res) {
         });
     } else {
         //invalid
-        res.send('invalid password');
+        return res.status(400).json({
+            success: false,
+            data: null,
+            error: {
+                code: 400,
+                message: 'invalid password'
+            }
+        });
     }
 
 }
-
+// function to generate token
 async function generateAccessToken(user) {
     return jwt.sign(user, process.env.TOKEN_SECRET);
 }
