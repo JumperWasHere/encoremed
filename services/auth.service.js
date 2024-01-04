@@ -1,5 +1,5 @@
 const db = require('../dbConnection/db');
-
+//get user by email
 async function getUserByEmail(email) {
     let user = [];
     let query = 'SELECT * FROM [UsersAccess] WHERE [email] = @email  ';
@@ -16,6 +16,7 @@ async function getUserByEmail(email) {
     })
     return user;
 }
+// register user account
 async function registerUser(password, data) {
     let UsersAccessId = 0
     let query = `INSERT INTO [UsersAccess] ([email], [password], [role],[createdAt],[updatedAt]) 
@@ -36,6 +37,7 @@ async function registerUser(password, data) {
     })
     return UsersAccessId;
 }
+// create data for doctor table
 async function registerDoctorDetails(userAccessId, data) {
     let drId = 0
     let query = `INSERT INTO [Doctor] ([userAccessId],[username], [fullname], [specialities],[clinicName],[phoneNumber],[address],[createdAt],[updatedAt]) 
@@ -62,6 +64,7 @@ async function registerDoctorDetails(userAccessId, data) {
     })
     return drId;
 }
+// create data for patient table
 async function registerPatientDetails(userAccessId, data) {
     let drId = 0
     let query = `INSERT INTO [Patient] ([userAccessId],[username], [fullname], [phoneNumber],[address],[createdAt],[updatedAt]) 
@@ -86,6 +89,7 @@ async function registerPatientDetails(userAccessId, data) {
     })
     return drId;
 }
+// check if email is exist
 async function checkUserEmail(email) {
     let isExist = false
     const query = 'SELECT ID FROM [UsersAccess] WHERE Email = @email';

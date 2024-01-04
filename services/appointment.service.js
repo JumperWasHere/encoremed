@@ -1,6 +1,6 @@
 
 const db = require('../dbConnection/db');
-
+// get doctor timeslot
 async function getTImeSlotByDocId(data) {
     let collection = [];
     let query = `Select [id],[doctorId],[eventId],[date],CONVERT(VARCHAR, startTime, 108) AS startTime ,CONVERT(VARCHAR, endTime, 108) AS endTime ,[isBooked]
@@ -36,11 +36,11 @@ async function checkTImeSlot(data) {
             console.log('result.recordset', result.recordset);
             isbooked = false;//not book yet
         }
-        // console.log('result', result.recordsets[0].length);
     })
     return isbooked;
 }
-async function createAppoitment(data) {
+// booking appointment
+async function createAppointment(data) {
     let idInsert = false;
     try {
         let query = `INSERT INTO [Appoitments] ([patientId], [doctorId],[timeslotId], [purpose],[status],[createdAt],[updatedAt]) 
@@ -67,6 +67,7 @@ async function createAppoitment(data) {
     }
     return idInsert;
 }
+//update time slot
 async function updateTimeSlot(timeslotId) {
     let query = `UPDATE  [TimeSlot] SET isBooked= @isBooked where id=@timeslotId`;
 
@@ -80,4 +81,4 @@ async function updateTimeSlot(timeslotId) {
 
     })
 }
-module.exports = { getTImeSlotByDocId, checkTImeSlot, createAppoitment, updateTimeSlot }
+module.exports = { getTImeSlotByDocId, checkTImeSlot, createAppointment, updateTimeSlot }

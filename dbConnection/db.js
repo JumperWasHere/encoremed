@@ -6,10 +6,8 @@ var req,req2,retryTimes=0,retryLimit=5,queryRetryTimes=0,queryRetryLimit=5;
 
 
 exports.executeSql2 = async function (sql, inputParams,callback) {
-
     var conn = new sqlDb.ConnectionPool(settings.dbConfig);
      var ins = sql + ';select @@IDENTITY AS \'insertID\'';
-    // await getConnection(conn, 'calc')  
     await conn.connect();
     try{
     const request = await conn.request();

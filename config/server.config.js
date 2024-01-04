@@ -1,7 +1,7 @@
 const dotenv = require('dotenv');
 dotenv.config();
 
-
+// connection configuration setting
 exports.dbConfig = {
     server: process.env.CON_SERVER,
     database: process.env.CON_DATABASE,
